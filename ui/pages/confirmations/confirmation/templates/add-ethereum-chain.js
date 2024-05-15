@@ -214,12 +214,12 @@ function getValues(pendingApproval, t, actions, history, data) {
         },
         children: [
           {
-            element: 'Chip',
-            key: 'network-chip',
+            element: 'Tag',
+            key: 'network-tag',
             props: {
               label: pendingApproval.requestData.chainName,
               backgroundColor: BackgroundColor.backgroundAlternative,
-              leftIconUrl: pendingApproval.requestData.imageUrl,
+              startIconName: 'ethereum',
             },
           },
         ],
