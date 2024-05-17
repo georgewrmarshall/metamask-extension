@@ -1,8 +1,9 @@
-import PropTypes from 'prop-types';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { usePopper } from 'react-popper';
 import classnames from 'classnames';
+import PropTypes from 'prop-types';
+import Box from '../component-library/box/box';
 
 /**
  * @deprecated The `<Menu />` component has been deprecated in favor of the new `<Popover>` component from the component-library.
@@ -13,59 +14,119 @@ import classnames from 'classnames';
  * {@link https://github.com/MetaMask/metamask-extension/issues/20498}
  */
 
-const Menu = ({
+const Popover = ({
   anchorElement,
   children,
   className,
-  'data-testid': dataTestId,
   onHide,
   popperOptions,
+  isOpen,
+  title,
+  offset,
+  flip,
+  preventOverflow,
+  matchWidth,
+  hasArrow,
+  onClickOutside,
+  onPressEscKey,
 }) => {
   const [popperElement, setPopperElement] = useState(null);
   const popoverContainerElement = useRef(
     document.getElementById('popover-content'),
   );
 
-  const { attributes, styles } = usePopper(
-    anchorElement,
-    popperElement,
-    popperOptions,
-  );
+  const { styles, attributes } = usePopper(anchorElement, popperElement, {
+    placement: 'bottom-start',
+    modifiers: [
+      {
+        name: 'offset',
+        options: {
+          offset: offset || [0, 8],
+        },
+      },
+      {
+        name: 'flip',
+        enabled: flip !== undefined ? flip : false,
+      },
+      {
+        name: 'preventOverflow',
+        enabled: preventOverflow !== undefined ? preventOverflow : false,
+      },
+      {
+        name: 'arrow',
+        enabled: hasArrow !== undefined ? hasArrow : false,
+        options: {
+          element: '[data-popper-arrow]',
+        },
+      },
+    ],
+  });
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('click', onClickOutside);
+      document.addEventListener('keydown', onPressEscKey);
+    } else {
+      document.removeEventListener('click', onClickOutside);
+      document.removeEventListener('keydown', onPressEscKey);
+    }
+
+    return () => {
+      document.removeEventListener('click', onClickOutside);
+      document.removeEventListener('keydown', onPressEscKey);
+    };
+  }, [isOpen, onClickOutside, onPressEscKey]);
 
   return createPortal(
-    <>
-      <div
-        className="menu__background"
-        data-testid={dataTestId}
-        onClick={onHide}
-      />
-      <div
-        className={classnames('menu__container', className)}
-        data-testid={className}
-        ref={setPopperElement}
-        style={styles.popper}
-        {...attributes.popper}
-      >
-        {children}
-      </div>
-    </>,
+    isOpen && (
+      <>
+        <div
+          className="popover__background"
+          onClick={onHide}
+        />
+        <Box
+          ref={setPopperElement}
+          className={classnames('popover__container', className)}
+          {...attributes.popper}
+          style={styles.popper}
+        >
+          {title && <div className="popover__title">{title}</div>}
+          {children}
+        </Box>
+      </>
+    ),
     popoverContainerElement.current,
   );
 };
 
-Menu.propTypes = {
+Popover.propTypes = {
   anchorElement: PropTypes.instanceOf(window.Element),
   children: PropTypes.node.isRequired,
   className: PropTypes.string,
   onHide: PropTypes.func.isRequired,
   popperOptions: PropTypes.object,
-  dataTestId: PropTypes.string,
+  isOpen: PropTypes.bool.isRequired,
+  title: PropTypes.string,
+  offset: PropTypes.arrayOf(PropTypes.number),
+  flip: PropTypes.bool,
+  preventOverflow: PropTypes.bool,
+  matchWidth: PropTypes.bool,
+  hasArrow: PropTypes.bool,
+  onClickOutside: PropTypes.func,
+  onPressEscKey: PropTypes.func,
 };
 
-Menu.defaultProps = {
-  anchorElement: undefined,
+Popover.defaultProps = {
   className: undefined,
   popperOptions: undefined,
+  title: undefined,
+  offset: undefined,
+  flip: undefined,
+  preventOverflow: undefined,
+  matchWidth: undefined,
+  hasArrow: undefined,
+  onClickOutside: undefined,
+  onPressEscKey: undefined,
 };
 
-export default Menu;
+export default Popover;
